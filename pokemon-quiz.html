@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Which Pokémon Are You?</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root { --red:#E3350D; --yellow:#FFD700; --blue:#0075BE; --dark:#1a1a2e; --darker:#0d0d1a; --white:#F8F8F8; --gray:#2a2a4a; }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{background:var(--darker);font-family:'Nunito',sans-serif;color:var(--white);min-height:100vh;overflow-x:hidden;}
+  body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(227,53,13,.15) 0%,transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(0,117,190,.15) 0%,transparent 50%);animation:bgPulse 6s ease-in-out infinite alternate;pointer-events:none;z-index:0;}
+  @keyframes bgPulse{0%{opacity:.6}100%{opacity:1}}
+  .pokeball-bg{position:fixed;width:600px;height:600px;border-radius:50%;border:40px solid rgba(255,255,255,.03);top:-200px;right:-200px;pointer-events:none;z-index:0;animation:spin 30s linear infinite;}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  .container{position:relative;z-index:1;max-width:820px;margin:0 auto;padding:20px;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  @keyframes fadeInUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+  @keyframes popIn{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+  @keyframes cardSlide{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes shimmer{from{background-position:200% 0}to{background-position:-200% 0}}
+  @keyframes pokeSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+  /* NAV TABS */
+  .tab-bar{display:flex;gap:10px;margin-bottom:25px;width:100%;}
+  .tab-btn{flex:1;padding:12px;font-family:'Press Start 2P',monospace;font-size:8px;border:2px solid rgba(255,255,255,.15);background:rgba(42,42,74,.6);color:rgba(255,255,255,.5);border-radius:12px;cursor:pointer;letter-spacing:1px;transition:all .2s;}
+  .tab-btn.active{border-color:var(--yellow);color:var(--yellow);background:rgba(255,215,0,.1);box-shadow:0 0 15px rgba(255,215,0,.2);}
+
+  /* NAME ENTRY */
+  #name-screen{text-align:center;animation:fadeInUp .8s ease both;width:100%;}
+  .pokeball-icon{width:90px;height:90px;margin:0 auto 20px;animation:float 3s ease-in-out infinite;}
+  .pokeball-icon svg{width:100%;height:100%;}
+  .title-main{font-family:'Press Start 2P',monospace;font-size:clamp(13px,3.5vw,20px);color:var(--yellow);text-shadow:3px 3px 0 var(--red);line-height:1.6;margin-bottom:8px;letter-spacing:2px;}
+  .title-sub{font-family:'Press Start 2P',monospace;font-size:clamp(7px,1.8vw,11px);color:var(--blue);margin-bottom:25px;letter-spacing:1px;}
+  .intro-desc{font-size:15px;color:rgba(255,255,255,.75);max-width:500px;margin:0 auto 25px;line-height:1.8;font-weight:700;}
+  .intro-desc span{color:var(--yellow);}
+  .name-input-wrap{margin-bottom:25px;}
+  .name-label{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--yellow);letter-spacing:2px;display:block;margin-bottom:12px;}
+  .name-input{width:100%;max-width:380px;padding:16px 22px;background:rgba(42,42,74,.9);border:2px solid rgba(255,215,0,.4);border-radius:14px;color:var(--white);font-family:'Nunito',sans-serif;font-size:18px;font-weight:700;text-align:center;outline:none;transition:border-color .2s;}
+  .name-input:focus{border-color:var(--yellow);box-shadow:0 0 20px rgba(255,215,0,.2);}
+  .name-input::placeholder{color:rgba(255,255,255,.3);}
+  .type-badges{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:28px;}
+  .type-badge{padding:4px 12px;border-radius:20px;font-size:10px;font-weight:900;letter-spacing:1px;text-transform:uppercase;opacity:0;animation:popIn .4s ease both;}
+  .btn-start{background:linear-gradient(135deg,var(--red),#ff6b35);color:white;border:none;padding:16px 48px;font-family:'Press Start 2P',monospace;font-size:12px;cursor:pointer;border-radius:50px;letter-spacing:2px;box-shadow:0 6px 0 #8b1a07,0 10px 30px rgba(227,53,13,.5);transition:all .15s;position:relative;top:0;opacity:.4;pointer-events:none;}
+  .btn-start.ready{opacity:1;pointer-events:all;}
+  .btn-start.ready:hover{top:3px;box-shadow:0 3px 0 #8b1a07;}
+  .btn-start.ready:active{top:6px;box-shadow:none;}
+
+  /* QUIZ */
+  #quiz-screen{display:none;width:100%;}
+  .progress-wrap{width:100%;margin-bottom:28px;}
+  .progress-info{display:flex;justify-content:space-between;margin-bottom:10px;}
+  .progress-label{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--yellow);letter-spacing:1px;}
+  .progress-bar-bg{width:100%;height:12px;background:var(--gray);border-radius:6px;overflow:hidden;border:2px solid rgba(255,255,255,.1);}
+  .progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--red),var(--yellow));border-radius:6px;transition:width .5s cubic-bezier(.4,0,.2,1);box-shadow:0 0 10px rgba(255,215,0,.5);}
+  .question-card{background:linear-gradient(135deg,rgba(42,42,74,.95),rgba(26,26,46,.95));border:2px solid rgba(255,215,0,.3);border-radius:20px;padding:32px;margin-bottom:22px;box-shadow:0 20px 60px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.1);animation:cardSlide .5s ease both;}
+  .question-num{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--red);letter-spacing:2px;margin-bottom:14px;display:flex;align-items:center;gap:10px;}
+  .question-num::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(227,53,13,.5),transparent);}
+  .question-text{font-size:clamp(15px,2.8vw,19px);font-weight:900;line-height:1.5;color:var(--white);}
+  .question-emoji{font-size:30px;margin-bottom:10px;display:block;}
+  .options-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  @media(max-width:500px){.options-grid{grid-template-columns:1fr}}
+  .option-btn{background:linear-gradient(135deg,rgba(42,42,74,.8),rgba(26,26,46,.8));border:2px solid rgba(255,255,255,.15);border-radius:14px;padding:16px 18px;color:var(--white);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;text-align:left;transition:all .2s;position:relative;overflow:hidden;line-height:1.4;}
+  .option-btn::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,var(--yellow),var(--red));opacity:0;transition:opacity .2s;z-index:0;}
+  .option-btn span{position:relative;z-index:1;}
+  .option-btn:hover{border-color:var(--yellow);transform:translateY(-3px);box-shadow:0 8px 25px rgba(255,215,0,.2);}
+  .option-btn:hover::before{opacity:.15;}
+  .option-btn.selected{border-color:var(--yellow);box-shadow:0 0 20px rgba(255,215,0,.4);}
+  .option-btn.selected::before{opacity:.25;}
+  .option-letter{display:inline-block;width:24px;height:24px;background:rgba(255,255,255,.1);border-radius:50%;text-align:center;line-height:24px;margin-right:10px;font-family:'Press Start 2P',monospace;font-size:8px;}
+  .btn-next{width:100%;background:linear-gradient(135deg,var(--blue),#0099ff);color:white;border:none;padding:16px;font-family:'Press Start 2P',monospace;font-size:11px;cursor:pointer;border-radius:14px;letter-spacing:2px;box-shadow:0 6px 0 #003d7a,0 10px 30px rgba(0,117,190,.4);transition:all .15s;position:relative;top:0;opacity:.4;pointer-events:none;}
+  .btn-next.active{opacity:1;pointer-events:all;}
+  .btn-next.active:hover{top:3px;box-shadow:0 3px 0 #003d7a;}
+
+  /* LOADING */
+  #loading-screen{display:none;text-align:center;padding:60px 20px;}
+  .pokeball-spin{width:80px;height:80px;margin:0 auto 30px;animation:pokeSpin 1s linear infinite;}
+  .loading-text{font-family:'Press Start 2P',monospace;font-size:11px;color:var(--yellow);letter-spacing:2px;animation:blink 1s ease-in-out infinite;}
+
+  /* RESULT */
+  #result-screen{display:none;text-align:center;animation:fadeInUp .8s ease both;width:100%;}
+  .result-header{font-family:'Press Start 2P',monospace;font-size:10px;color:var(--yellow);letter-spacing:3px;margin-bottom:18px;text-shadow:2px 2px 0 var(--red);}
+  .result-card{background:linear-gradient(135deg,rgba(42,42,74,.98),rgba(26,26,46,.98));border:3px solid var(--yellow);border-radius:24px;padding:35px 30px;box-shadow:0 0 40px rgba(255,215,0,.2),0 30px 80px rgba(0,0,0,.6);position:relative;overflow:hidden;margin-bottom:20px;}
+  .result-card::before{content:'';position:absolute;top:-2px;left:-2px;right:-2px;height:6px;background:linear-gradient(90deg,var(--red),var(--yellow),var(--blue),var(--yellow),var(--red));border-radius:24px 24px 0 0;background-size:200% 100%;animation:shimmer 3s linear infinite;}
+  .pokemon-sprite-wrap{width:180px;height:180px;margin:0 auto 14px;position:relative;background:radial-gradient(circle,rgba(255,215,0,.15) 0%,transparent 70%);border-radius:50%;display:flex;align-items:center;justify-content:center;}
+  .pokemon-sprite{width:165px;height:165px;object-fit:contain;filter:drop-shadow(0 10px 30px rgba(255,215,0,.4));animation:float 3s ease-in-out infinite;transition:opacity .5s ease;}
+  .result-pokemon-name{font-family:'Press Start 2P',monospace;font-size:clamp(13px,3.5vw,20px);color:var(--yellow);text-shadow:3px 3px 0 var(--red);margin-bottom:8px;text-transform:uppercase;}
+  .result-type-badges{display:flex;gap:8px;justify-content:center;margin-bottom:18px;flex-wrap:wrap;}
+  .result-type-badge{padding:5px 16px;border-radius:20px;font-size:12px;font-weight:900;letter-spacing:1px;text-transform:uppercase;}
+  .result-divider{width:60px;height:3px;background:linear-gradient(90deg,var(--red),var(--yellow));margin:18px auto;border-radius:2px;}
+  .personality-title{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--blue);letter-spacing:2px;margin-bottom:10px;}
+  .personality-text{font-size:14px;line-height:1.8;color:rgba(255,255,255,.85);font-weight:700;margin-bottom:18px;}
+  .trait-tags{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:20px;}
+  .trait-tag{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);padding:5px 13px;border-radius:20px;font-size:12px;font-weight:700;color:rgba(255,255,255,.8);}
+  .battle-cry{background:rgba(255,215,0,.08);border:1px solid rgba(255,215,0,.3);border-radius:12px;padding:14px 18px;font-size:13px;font-style:italic;color:var(--yellow);font-weight:700;margin-bottom:22px;}
+  .result-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+  .btn-retry{background:linear-gradient(135deg,var(--red),#ff6b35);color:white;border:none;padding:14px 32px;font-family:'Press Start 2P',monospace;font-size:9px;cursor:pointer;border-radius:50px;letter-spacing:2px;box-shadow:0 6px 0 #8b1a07;transition:all .15s;position:relative;top:0;}
+  .btn-retry:hover{top:3px;box-shadow:0 3px 0 #8b1a07;}
+  .btn-board{background:linear-gradient(135deg,#6B3FA0,#9B59B6);color:white;border:none;padding:14px 32px;font-family:'Press Start 2P',monospace;font-size:9px;cursor:pointer;border-radius:50px;letter-spacing:2px;box-shadow:0 6px 0 #3d1f66;transition:all .15s;position:relative;top:0;}
+  .btn-board:hover{top:3px;box-shadow:0 3px 0 #3d1f66;}
+  .stars{color:var(--yellow);font-size:18px;margin-bottom:8px;letter-spacing:4px;}
+  .pokedex-num{font-family:'Press Start 2P',monospace;font-size:8px;color:rgba(255,255,255,.3);margin-bottom:5px;}
+  .trainer-name-display{font-family:'Press Start 2P',monospace;font-size:9px;color:rgba(255,255,255,.5);margin-bottom:10px;letter-spacing:1px;}
+
+  /* LEADERBOARD */
+  #board-screen{display:none;width:100%;animation:fadeInUp .6s ease both;}
+  .board-header{font-family:'Press Start 2P',monospace;font-size:clamp(10px,2.5vw,14px);color:var(--yellow);text-shadow:2px 2px 0 var(--red);text-align:center;margin-bottom:8px;letter-spacing:2px;}
+  .board-sub{font-family:'Press Start 2P',monospace;font-size:8px;color:rgba(255,255,255,.4);text-align:center;margin-bottom:25px;letter-spacing:1px;}
+  .board-list{width:100%;display:flex;flex-direction:column;gap:12px;margin-bottom:25px;}
+  .board-entry{background:linear-gradient(135deg,rgba(42,42,74,.9),rgba(26,26,46,.9));border:2px solid rgba(255,255,255,.1);border-radius:16px;padding:16px 20px;display:flex;align-items:center;gap:16px;transition:border-color .2s;animation:fadeInUp .4s ease both;}
+  .board-entry:hover{border-color:rgba(255,215,0,.3);}
+  .board-entry.me{border-color:var(--yellow);box-shadow:0 0 20px rgba(255,215,0,.15);}
+  .board-rank{font-family:'Press Start 2P',monospace;font-size:11px;color:rgba(255,255,255,.3);min-width:30px;text-align:center;}
+  .board-rank.gold{color:#FFD700;}
+  .board-rank.silver{color:#C0C0C0;}
+  .board-rank.bronze{color:#CD7F32;}
+  .board-sprite{width:56px;height:56px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,.4));}
+  .board-info{flex:1;}
+  .board-trainer{font-family:'Press Start 2P',monospace;font-size:9px;color:var(--white);margin-bottom:4px;letter-spacing:1px;}
+  .board-pokemon{font-size:13px;font-weight:900;color:rgba(255,255,255,.7);}
+  .board-type-badges{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap;}
+  .board-type-badge{padding:2px 9px;border-radius:10px;font-size:9px;font-weight:900;text-transform:uppercase;}
+  .board-time{font-family:'Press Start 2P',monospace;font-size:7px;color:rgba(255,255,255,.25);margin-top:6px;}
+  .board-empty{text-align:center;padding:50px 20px;color:rgba(255,255,255,.3);font-family:'Press Start 2P',monospace;font-size:10px;line-height:2;}
+  .btn-take-quiz{width:100%;background:linear-gradient(135deg,var(--red),#ff6b35);color:white;border:none;padding:16px;font-family:'Press Start 2P',monospace;font-size:11px;cursor:pointer;border-radius:14px;letter-spacing:2px;box-shadow:0 6px 0 #8b1a07;transition:all .15s;position:relative;top:0;}
+  .btn-take-quiz:hover{top:3px;box-shadow:0 3px 0 #8b1a07;}
+  .board-loading{text-align:center;padding:40px;font-family:'Press Start 2P',monospace;font-size:9px;color:var(--yellow);animation:blink 1s ease-in-out infinite;}
+  .me-tag{background:var(--yellow);color:#333;font-family:'Press Start 2P',monospace;font-size:7px;padding:2px 7px;border-radius:6px;margin-left:8px;vertical-align:middle;}
+
+  /* TYPE COLORS */
+  .type-fire{background:#FF6B35;color:white}.type-water{background:#0075BE;color:white}.type-grass{background:#4CAF50;color:white}
+  .type-electric{background:#FFD700;color:#333}.type-psychic{background:#E91E8C;color:white}.type-dark{background:#4A3728;color:white}
+  .type-dragon{background:#6B3FA0;color:white}.type-ice{background:#74D7D7;color:#333}.type-rock{background:#A8956A;color:white}
+  .type-ground{background:#C4A35A;color:white}.type-ghost{background:#5D4E8E;color:white}.type-fairy{background:#F8A8C8;color:#333}
+  .type-fighting{background:#C03028;color:white}.type-bug{background:#7BC550;color:white}.type-poison{background:#9B59B6;color:white}
+  .type-flying{background:#96B8E4;color:#333}.type-steel{background:#8E9EB0;color:white}.type-normal{background:#A8A878;color:white}
+</style>
+</head>
+<body>
+<div class="pokeball-bg"></div>
+<div class="container">
+
+  <!-- NAME ENTRY -->
+  <div id="name-screen">
+    <div class="pokeball-icon">
+      <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#f8f8f8" stroke="#333" stroke-width="3"/><path d="M2 50 Q2 2 50 2 Q98 2 98 50" fill="#E3350D"/><rect x="2" y="46" width="96" height="8" fill="#333"/><circle cx="50" cy="50" r="14" fill="#f8f8f8" stroke="#333" stroke-width="3"/><circle cx="50" cy="50" r="7" fill="#f8f8f8" stroke="#333" stroke-width="2"/></svg>
+    </div>
+    <div class="title-main">WHICH POKÉMON<br>ARE YOU?</div>
+    <div class="title-sub">⚔️ THE ULTIMATE PERSONALITY QUEST ⚔️</div>
+    <p class="intro-desc">Answer <span>8 epic questions</span> and discover which of the <span>50 fan-favourite Pokémon</span> matches your soul. Then see how your friends compare!</p>
+    <div class="name-input-wrap">
+      <label class="name-label">ENTER YOUR TRAINER NAME</label>
+      <input class="name-input" id="trainerName" type="text" maxlength="16" placeholder="e.g. Ash Ketchum" oninput="checkName()">
+    </div>
+    <div class="type-badges" id="typeBadges"></div>
+    <button class="btn-start" id="btnStart" onclick="startQuiz()">▶ BEGIN QUEST</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="quiz-screen">
+    <div class="progress-wrap">
+      <div class="progress-info">
+        <span class="progress-label" id="progressLabel">QUESTION 1 OF 8</span>
+        <span class="progress-label" id="progressPct">0%</span>
+      </div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+    <div class="question-card" id="questionCard">
+      <div class="question-num" id="questionNum">QUESTION 1</div>
+      <span class="question-emoji" id="questionEmoji">🌟</span>
+      <div class="question-text" id="questionText"></div>
+    </div>
+    <div class="options-grid" id="optionsGrid"></div>
+    <br>
+    <button class="btn-next" id="btnNext" onclick="nextQuestion()">NEXT ▶</button>
+  </div>
+
+  <!-- LOADING -->
+  <div id="loading-screen">
+    <div class="pokeball-spin">
+      <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="#f8f8f8" stroke="#333" stroke-width="3"/><path d="M2 50 Q2 2 50 2 Q98 2 98 50" fill="#E3350D"/><rect x="2" y="46" width="96" height="8" fill="#333"/><circle cx="50" cy="50" r="14" fill="#f8f8f8" stroke="#333" stroke-width="3"/><circle cx="50" cy="50" r="7" fill="#f8f8f8" stroke="#333" stroke-width="2"/></svg>
+    </div>
+    <div class="loading-text" id="loadingText">FINDING YOUR POKÉMON...</div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result-screen">
+    <div class="result-header">✨ YOUR POKÉMON SPIRIT IS... ✨</div>
+    <div class="result-card">
+      <div class="pokemon-sprite-wrap" id="spriteWrap">
+        <img class="pokemon-sprite" id="resultSprite" src="" alt="Pokemon">
+      </div>
+      <div class="stars">★★★★★</div>
+      <div class="pokedex-num" id="resultNum"></div>
+      <div class="trainer-name-display" id="resultTrainer"></div>
+      <div class="result-pokemon-name" id="resultName"></div>
+      <div class="result-type-badges" id="resultTypeBadges"></div>
+      <div class="result-divider"></div>
+      <div class="personality-title">⚔️ YOUR PERSONALITY PROFILE</div>
+      <div class="personality-text" id="resultPersonality"></div>
+      <div class="trait-tags" id="resultTraits"></div>
+      <div class="battle-cry" id="resultCry"></div>
+      <div class="result-actions">
+        <button class="btn-retry" onclick="restartQuiz()">↺ RETRY</button>
+        <button class="btn-board" onclick="showBoard()">🏆 LEADERBOARD</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEADERBOARD -->
+  <div id="board-screen">
+    <div class="tab-bar">
+      <button class="tab-btn" onclick="showNameScreen()">🎮 TAKE QUIZ</button>
+      <button class="tab-btn active">🏆 LEADERBOARD</button>
+    </div>
+    <div class="board-header">🏆 TRAINER HALL OF FAME</div>
+    <div class="board-sub">ALL TRAINERS & THEIR POKÉMON SPIRITS</div>
+    <div class="board-list" id="boardList"><div class="board-loading">LOADING TRAINERS...</div></div>
+    <button class="btn-take-quiz" onclick="showNameScreen()">▶ TAKE THE QUIZ</button>
+  </div>
+
+</div>
+
+<script>
+const questions = [
+  {emoji:"⚔️",text:"A rival challenges you to a battle. What's your first instinct?",options:[{text:"Charge in headfirst — attack is the best defense!",types:["fire","fighting"]},{text:"Observe their moves carefully, then strike perfectly.",types:["psychic","dark"]},{text:"Devise a cunning trap and let them walk into it.",types:["dark","ghost"]},{text:"Shield your allies first, then counterattack.",types:["water","steel"]}]},
+  {emoji:"🌍",text:"You discover an uncharted land full of mystery. You...",options:[{text:"Explore every corner immediately — adventure calls!",types:["electric","flying","dragon"]},{text:"Map it methodically, uncovering secrets step by step.",types:["psychic","steel"]},{text:"Set up camp and befriend the native creatures.",types:["grass","fairy","normal"]},{text:"Claim the highest peak and survey the entire land.",types:["dragon","rock","flying"]}]},
+  {emoji:"🔥",text:"Your team is losing badly in a crucial moment. You...",options:[{text:"Rally everyone with a fierce, passionate battle cry!",types:["fire","fighting"]},{text:"Calmly analyse the situation and exploit the weakness.",types:["psychic","ice","water"]},{text:"Sacrifice yourself to turn the tide for your allies.",types:["steel","normal","fairy"]},{text:"Unleash your secret power you've been saving all along.",types:["dragon","dark","ghost"]}]},
+  {emoji:"🌙",text:"It's midnight. A strange sound echoes through the forest. You...",options:[{text:"Rush toward it — nothing scares you!",types:["fire","fighting","electric"]},{text:"Blend into the shadows and investigate silently.",types:["ghost","dark"]},{text:"Sense the spiritual energy… it feels peaceful.",types:["psychic","fairy"]},{text:"Stay perfectly still and listen carefully.",types:["ice","water","grass"]}]},
+  {emoji:"💎",text:"You find a treasure chest with one wish inside. You wish for...",options:[{text:"Unlimited power to defeat any challenger.",types:["dragon","fire","fighting"]},{text:"The wisdom to understand everything in existence.",types:["psychic","water","normal"]},{text:"Eternal freedom to roam the entire world.",types:["flying","electric","dragon"]},{text:"Unbreakable bonds with those you love most.",types:["fairy","normal","grass"]}]},
+  {emoji:"🏔️",text:"Which environment makes you feel most alive?",options:[{text:"A raging volcano — raw, powerful, untameable.",types:["fire","rock","fighting"]},{text:"A deep ocean trench — mysterious, vast, ancient.",types:["water","dark","ice"]},{text:"Soaring high above thunderclouds.",types:["electric","flying","dragon"]},{text:"An ancient forest dense with whispering secrets.",types:["grass","ghost","bug"]}]},
+  {emoji:"🎭",text:"How do people closest to you describe you?",options:[{text:"Wild, unpredictable, but fiercely loyal.",types:["fire","electric","dark"]},{text:"Calm, mysterious, always two steps ahead.",types:["psychic","dark","ghost"]},{text:"Gentle and nurturing, but ferocious when provoked.",types:["fairy","grass","water"]},{text:"Reliable, unstoppable — the rock everyone leans on.",types:["steel","rock","normal"]}]},
+  {emoji:"🌟",text:"What is your ultimate goal as a trainer?",options:[{text:"Become the strongest — Champion of all Champions.",types:["dragon","fighting","fire"]},{text:"Unravel the deepest mysteries of Pokémon and the universe.",types:["psychic","water","ghost"]},{text:"Travel every region, completely free.",types:["flying","normal","electric"]},{text:"Build an unbreakable bond with one perfect partner.",types:["fairy","grass","dark"]}]}
+];
+
+const allPokemon = [
+  {id:25,slug:"pikachu",emoji:"⚡",name:"Pikachu",types:["Electric"],scores:{electric:5,flying:2,normal:2},personality:"You are the heart of every adventure! Like Pikachu, you radiate infectious energy and loyalty that lights up every room. Small but mighty — you punch far above your weight and inspire everyone around you with your never-give-up spirit.",traits:["Energetic","Loyal","Brave","Inspiring"],cry:'"Every journey begins with a single spark."'},
+  {id:6,slug:"charizard",emoji:"🔥",name:"Charizard",types:["Fire","Flying"],scores:{fire:5,dragon:4,flying:3,fighting:2},personality:"You carry the soul of a Charizard — powerful, proud, burning with ambition. Fierce on the outside, but deeply loyal to those who earn your respect. You were built for greatness and everyone around you knows it.",traits:["Ambitious","Proud","Fierce","Loyal"],cry:'"My fire only burns brighter in the storm."'},
+  {id:150,slug:"mewtwo",emoji:"🧠",name:"Mewtwo",types:["Psychic"],scores:{psychic:6,dark:3,fighting:2},personality:"Like Mewtwo, you are a being of extraordinary intellect and immense hidden power. You operate on a different level — analytical, intense, and fiercely independent. Few truly understand you, but all respect you.",traits:["Genius","Intense","Independent","Powerful"],cry:'"I was not born. I was created. And I have surpassed my creators."'},
+  {id:133,slug:"eevee",emoji:"⭐",name:"Eevee",types:["Normal"],scores:{normal:5,fairy:3,grass:2},personality:"Like the versatile Eevee, you overflow with untapped potential. You haven't fully chosen your path yet — and that IS your greatest strength. Adaptable, open-hearted, and beloved by all who meet you.",traits:["Adaptable","Potential-filled","Open-minded","Beloved"],cry:'"My story hasn\'t been written yet. That\'s the best part."'},
+  {id:94,slug:"gengar",emoji:"👻",name:"Gengar",types:["Ghost","Poison"],scores:{ghost:5,dark:4,psychic:2},personality:"Mischievous, charismatic, and endlessly entertaining — you are Gengar. You thrive in the unexpected, love keeping people on their toes, and have a dark sense of humour that somehow makes everyone love you more.",traits:["Mischievous","Charismatic","Witty","Unpredictable"],cry:'"Boo. Did I scare you? Good."'},
+  {id:448,slug:"lucario",emoji:"⚔️",name:"Lucario",types:["Fighting","Steel"],scores:{fighting:5,psychic:4,steel:3,dark:2},personality:"You are Lucario — a warrior with a philosopher's soul. You pursue mastery relentlessly, guided by an unbreakable sense of justice. Your aura radiates focus, power, and unwavering conviction that others can literally feel.",traits:["Disciplined","Just","Masterful","Focused"],cry:'"I sense your aura. It burns with purpose."'},
+  {id:197,slug:"umbreon",emoji:"🌑",name:"Umbreon",types:["Dark"],scores:{dark:5,ghost:3,psychic:2},personality:"Mysterious, patient, and devastatingly strategic — you are Umbreon. You observe before you act, and when you strike, it's with surgical precision. Your quiet intensity is your most powerful weapon.",traits:["Strategic","Mysterious","Patient","Cool-headed"],cry:'"Silence is my sharpest weapon."'},
+  {id:149,slug:"dragonite",emoji:"🐲",name:"Dragonite",types:["Dragon","Flying"],scores:{dragon:5,flying:4,normal:3,water:2},personality:"Like Dragonite, you combine overwhelming power with a heart of gold. You are the rare kind of person who is both incredibly strong AND incredibly kind. People feel safe and inspired around you without even knowing why.",traits:["Powerful","Kind-hearted","Reliable","Legendary"],cry:'"True strength knows when not to be used."'},
+  {id:384,slug:"rayquaza",emoji:"🌪️",name:"Rayquaza",types:["Dragon","Flying"],scores:{dragon:6,flying:5,electric:2},personality:"Like the sky-lord Rayquaza, you soar above all conflicts — free, magnificent, and answering to no one. Your presence alone commands awe. You change the atmosphere of any room just by entering it.",traits:["Free","Majestic","Commanding","Untameable"],cry:'"The sky has no ceiling. Neither do I."'},
+  {id:445,slug:"garchomp",emoji:"🦈",name:"Garchomp",types:["Dragon","Ground"],scores:{dragon:5,fighting:3,rock:3,ground:3},personality:"Fast, fearless, and devastatingly effective — you are Garchomp. You don't overcomplicate things: you see your goal, you charge, you win. People both fear and deeply respect your relentless drive.",traits:["Relentless","Fast","Fearless","Decisive"],cry:'"I don\'t slow down. Ever."'},
+  {id:257,slug:"blaziken",emoji:"🔥",name:"Blaziken",types:["Fire","Fighting"],scores:{fire:5,fighting:5,electric:2},personality:"You are a blazing warrior — passionate, relentless, and born to lead. Like Blaziken, you combine raw power with lightning reflexes. You thrive under pressure and turn crisis into triumph.",traits:["Passionate","Fearless","Leader","Unstoppable"],cry:'"I don\'t back down. I rise up."'},
+  {id:282,slug:"gardevoir",emoji:"🌸",name:"Gardevoir",types:["Psychic","Fairy"],scores:{psychic:5,fairy:5,grass:2,water:2},personality:"Elegant, empathetic, and fiercely protective — you are Gardevoir. You possess a profound emotional intelligence that lets you sense what others feel before they speak. You would move the entire world for those you love.",traits:["Empathetic","Elegant","Protective","Perceptive"],cry:'"I feel everything. That is my power."'},
+  {id:700,slug:"sylveon",emoji:"🎀",name:"Sylveon",types:["Fairy"],scores:{fairy:6,normal:3,psychic:2},personality:"Like Sylveon, you disarm conflict with warmth and grace. Your kindness isn't naivety — it's your most sophisticated strategy. People lower their guards around you, and you build the most genuine connections imaginable.",traits:["Warm","Graceful","Disarming","Genuine"],cry:'"Kindness is the most powerful move of all."'},
+  {id:59,slug:"arcanine",emoji:"🔥",name:"Arcanine",types:["Fire"],scores:{fire:4,normal:3,fighting:3,flying:2},personality:"Noble, swift, and endlessly loyal — you are Arcanine. Legendary in bearing and heart, you charge into every challenge with blazing courage. The people you love know you will always come running for them.",traits:["Noble","Swift","Loyal","Courageous"],cry:'"I run not to escape, but to arrive."'},
+  {id:143,slug:"snorlax",emoji:"😴",name:"Snorlax",types:["Normal"],scores:{normal:5,water:2,grass:2,ice:2},personality:"Easygoing, content, and deceptively powerful — you are Snorlax. You live life at your own pace and refuse to be stressed by things outside your control. But when it truly matters? You unleash a force that leaves everyone speechless.",traits:["Easygoing","Content","Patient","Surprisingly Powerful"],cry:'"I\'ll move when I\'m ready. And you\'ll be glad I did."'},
+  {id:658,slug:"greninja",emoji:"💧",name:"Greninja",types:["Water","Dark"],scores:{water:5,dark:5,ghost:3,flying:2},personality:"Swift, stylish, and cool under any pressure — you are Greninja. You move through life like water: effortlessly adaptable, impossible to pin down, and always one step ahead. You became a champion because you chose your own path.",traits:["Swift","Cool","Adaptable","Independent"],cry:'"You can\'t catch what you can\'t see."'},
+  {id:157,slug:"typhlosion",emoji:"🌋",name:"Typhlosion",types:["Fire"],scores:{fire:5,fighting:3,rock:2,electric:2},personality:"Intense, passionate, and slow to anger but devastating when ignited — you are Typhlosion. You carry a volcano inside you, kept perfectly controlled until the moment it matters most.",traits:["Intense","Passionate","Controlled","Devastating"],cry:'"I burn slowly. Then all at once."'},
+  {id:65,slug:"alakazam",emoji:"🧠",name:"Alakazam",types:["Psychic"],scores:{psychic:6,dark:2,steel:2,ice:2},personality:"Like Alakazam, your mind is your greatest weapon. You process everything faster than others can blink, see patterns no one else notices, and always seem to know the answer before the question is finished.",traits:["Genius","Analytical","Quick-thinking","Precise"],cry:'"I already know what you\'re going to say."'},
+  {id:130,slug:"gyarados",emoji:"🌊",name:"Gyarados",types:["Water","Flying"],scores:{water:5,dark:4,dragon:3,flying:2},personality:"The ultimate transformation story — you are Gyarados. Once underestimated, now absolutely terrifying in your power. You have endured everything the world threw at you and emerged magnificent. Nobody overlooks you twice.",traits:["Transformed","Resilient","Terrifying","Magnificent"],cry:'"They laughed once. They never made that mistake again."'},
+  {id:778,slug:"mimikyu",emoji:"👻",name:"Mimikyu",types:["Ghost","Fairy"],scores:{ghost:5,fairy:4,dark:3,normal:2},personality:"Adorably mysterious and quietly fierce — you are Mimikyu. You long for connection more than anything, and beneath your exterior lies something raw and genuine. People who truly know you find the most loyal friend they've ever had.",traits:["Longing","Genuine","Fierce","Misunderstood"],cry:'"All I ever wanted was to be loved."'},
+  {id:1,slug:"bulbasaur",emoji:"🌿",name:"Bulbasaur",types:["Grass","Poison"],scores:{grass:5,poison:3,normal:3,water:2},personality:"Dependable, underrated, and quietly extraordinary — you are Bulbasaur. While others chase the spotlight, you grow steadily, nurturing everything around you. People always eventually realise you were the right choice all along.",traits:["Dependable","Steady","Nurturing","Underrated"],cry:'"Slow and steady wins every single time."'},
+  {id:7,slug:"squirtle",emoji:"💧",name:"Squirtle",types:["Water"],scores:{water:5,ice:3,steel:3,normal:2},personality:"Cool, composed, and surprisingly tough when needed — you are Squirtle. You have an effortless confidence and a natural charisma that makes people gravitate towards you. Inside that calm exterior is an absolutely unshakeable will.",traits:["Composed","Cool","Charismatic","Tough"],cry:'"Cool heads win battles. Always."'},
+  {id:376,slug:"metagross",emoji:"🤖",name:"Metagross",types:["Steel","Psychic"],scores:{steel:5,psychic:5,rock:3,ice:2},personality:"Like the powerhouse Metagross, you combine brute force with superior intellect. You are the ultimate problem-solver — methodical, powerful, and absolutely unstoppable when you lock on to a goal.",traits:["Methodical","Intellectual","Unstoppable","Powerful"],cry:'"I calculate. I decide. I execute."'},
+  {id:196,slug:"espeon",emoji:"🔮",name:"Espeon",types:["Psychic"],scores:{psychic:6,fairy:3,grass:2,ice:2},personality:"Refined, intuitive, and deeply perceptive — you are Espeon. You sense the flow of events before they unfold and navigate life with elegant precision. Your loyalty to those you've chosen is absolute and unbreakable.",traits:["Intuitive","Refined","Perceptive","Loyal"],cry:'"I see the future. It favours the prepared."'},
+  {id:134,slug:"vaporeon",emoji:"💧",name:"Vaporeon",types:["Water"],scores:{water:6,ice:3,normal:3,grass:2},personality:"Fluid, calming, and deeply attuned to emotion — you are Vaporeon. Like water, you adapt to any situation without losing your core essence. People find your presence deeply soothing, and you carry an ancient, peaceful wisdom.",traits:["Fluid","Calming","Adaptive","Wise"],cry:'"I flow around every obstacle. Never through."'},
+  {id:135,slug:"jolteon",emoji:"⚡",name:"Jolteon",types:["Electric"],scores:{electric:6,flying:3,fighting:2,dark:2},personality:"Sharp, quick, and crackling with nervous energy — you are Jolteon. Your mind races ahead of everyone else's and your reflexes are unmatched. You're a high-voltage personality that leaves a lasting impression everywhere you go.",traits:["Sharp","Quick","High-energy","Electric"],cry:'"Blink. Did you miss me? I thought so."'},
+  {id:136,slug:"flareon",emoji:"🔥",name:"Flareon",types:["Fire"],scores:{fire:6,fighting:3,normal:3,fairy:2},personality:"Warm, passionate, and fiercely expressive — you are Flareon. You feel everything deeply and wear your heart openly. Your inner fire draws people in and keeps them warm even in the coldest moments.",traits:["Passionate","Warm","Expressive","Heart-forward"],cry:'"Feel the warmth. That\'s all I ask."'},
+  {id:470,slug:"leafeon",emoji:"🌿",name:"Leafeon",types:["Grass"],scores:{grass:6,normal:3,flying:2,fairy:2},personality:"Pure, grounded, and radiating peaceful energy — you are Leafeon. You are deeply in tune with nature and the world around you. Your serenity is contagious, and people always feel more centred just by spending time with you.",traits:["Grounded","Serene","Natural","Centring"],cry:'"Be still. Listen. Nature always has the answer."'},
+  {id:471,slug:"glaceon",emoji:"❄️",name:"Glaceon",types:["Ice"],scores:{ice:6,water:3,psychic:3,steel:2},personality:"Cool, precise, and hauntingly beautiful — you are Glaceon. You carry yourself with quiet elegance that stops people mid-sentence. Underneath the composed exterior is a razor-sharp mind and a surprising warmth for those who break through.",traits:["Elegant","Precise","Cool-headed","Quietly Warm"],cry:'"I am not cold. I am simply selective."'},
+  {id:359,slug:"absol",emoji:"⚡",name:"Absol",types:["Dark"],scores:{dark:5,ghost:3,psychic:3,rock:2},personality:"Misunderstood, noble, and impossibly brave — you are Absol. You carry the burden of seeing what others refuse to acknowledge, and you act on it anyway despite the blame. Your courage is extraordinary and your heart is pure.",traits:["Noble","Misunderstood","Brave","Prophetic"],cry:'"I don\'t cause the storm. I warn of it."'},
+  {id:38,slug:"ninetales",emoji:"🦊",name:"Ninetales",types:["Fire"],scores:{fire:4,psychic:4,ghost:3,fairy:3},personality:"Ancient, intelligent, and mysteriously beautiful — you are Ninetales. You carry centuries of wisdom in your eyes and a quiet power that commands absolute respect. Graceful in everything, feared by those who cross you.",traits:["Ancient","Wise","Graceful","Powerful"],cry:'"I have lived a thousand years. I remember everything."'},
+  {id:330,slug:"flygon",emoji:"🐉",name:"Flygon",types:["Dragon","Ground"],scores:{dragon:5,flying:4,electric:2,normal:2},personality:"Adventurous, cheerful, and endlessly free-spirited — you are Flygon. You live for the journey and thrive in exploration. Your irresistibly positive energy makes even the most difficult path feel like an exciting quest.",traits:["Adventurous","Free-spirited","Cheerful","Explorer"],cry:'"The horizon is just an invitation to go further."'},
+  {id:475,slug:"gallade",emoji:"⚔️",name:"Gallade",types:["Fighting","Psychic"],scores:{fighting:5,psychic:5,fairy:2,steel:2},personality:"Honourable, chivalrous, and devastatingly skilled — you are Gallade. You live by a strict code of honour and use your power exclusively to protect others. A true knight: fearless in battle, gentle in heart.",traits:["Honourable","Chivalrous","Protective","Skilled"],cry:'"My blade is drawn only to defend."'},
+  {id:571,slug:"zoroark",emoji:"🦊",name:"Zoroark",types:["Dark"],scores:{dark:6,ghost:4,psychic:3,electric:2},personality:"Cunning, theatrical, and fiercely devoted to your pack — you are Zoroark. You are a master of illusion, always showing the world what you choose. For those you truly trust, however, you are utterly and completely real.",traits:["Cunning","Theatrical","Illusionist","Fiercely Loyal"],cry:'"What you see is exactly what I want you to see."'},
+  {id:405,slug:"luxray",emoji:"⚡",name:"Luxray",types:["Electric"],scores:{electric:5,dark:4,fighting:3,steel:2},personality:"Dominant, perceptive, and impossibly cool — you are Luxray. You see through every pretence and deception. Your commanding presence demands respect the moment you enter a space, and you never have to ask for it twice.",traits:["Dominant","Perceptive","Commanding","Piercing"],cry:'"I see through everything. Literally."'},
+  {id:350,slug:"milotic",emoji:"🌊",name:"Milotic",types:["Water"],scores:{water:6,fairy:4,psychic:3,normal:2},personality:"Breathtakingly beautiful and profoundly calming — you are Milotic. You possess the rare ability to soothe conflict and bring peace just by your presence. Your inner beauty radiates outward, and people find themselves better just for knowing you.",traits:["Beautiful","Peaceful","Calming","Healing"],cry:'"Beauty is not decoration. It is transformation."'},
+  {id:468,slug:"togekiss",emoji:"🕊️",name:"Togekiss",types:["Fairy","Flying"],scores:{fairy:5,flying:5,normal:3,psychic:2},personality:"Joyful, generous, and spreading happiness wherever you go — you are Togekiss. You actively seek out peace and share blessings with everyone. Your optimism is not naivety — it is a deliberate and powerful choice.",traits:["Joyful","Generous","Optimistic","Peaceful"],cry:'"Joy is something you give away, not save up."'},
+  {id:373,slug:"salamence",emoji:"🐉",name:"Salamence",types:["Dragon","Flying"],scores:{dragon:6,flying:5,fire:3,fighting:2},personality:"Wild, passionate, and absolutely untameable — you are Salamence. You dreamed of flying for so long that when you finally did, the whole world felt the shockwave. You pursued your dream with a ferocity that couldn't be stopped.",traits:["Wild","Passionate","Dream-chaser","Unstoppable"],cry:'"I dreamed of this sky. Now I own it."'},
+  {id:248,slug:"tyranitar",emoji:"🦎",name:"Tyranitar",types:["Rock","Dark"],scores:{rock:5,dark:5,fighting:3,dragon:3},personality:"Immovable, dominant, and reshaping the world around you just by existing — you are Tyranitar. You don't adapt to your environment. Your environment adapts to you. Unstoppable, unapologetic, and legendary.",traits:["Dominant","Immovable","Unstoppable","Legendary"],cry:'"I don\'t move mountains. I am the mountain."'},
+  {id:212,slug:"scizor",emoji:"🦀",name:"Scizor",types:["Bug","Steel"],scores:{steel:5,fighting:4,dark:3,flying:2},personality:"Efficient, precise, and devastatingly effective — you are Scizor. You don't waste energy on unnecessary movement or words. Every action is calculated for maximum impact. Cool under pressure, lethal in focus.",traits:["Efficient","Precise","Calculated","Respected"],cry:'"One strike. That\'s all I ever need."'},
+  {id:151,slug:"mew",emoji:"✨",name:"Mew",types:["Psychic"],scores:{psychic:5,fairy:4,normal:4,grass:3,flying:2,electric:2,water:2},personality:"Infinitely curious, playful, and carrying the DNA of wonder — you are Mew. You approach life with a childlike joy that never fades, and beneath your playfulness lies the genetic blueprint of all possibility. You contain multitudes.",traits:["Curious","Playful","Wondrous","Infinite Potential"],cry:'"Everything is interesting if you look at it the right way."'},
+  {id:392,slug:"infernape",emoji:"🔥",name:"Infernape",types:["Fire","Fighting"],scores:{fire:5,fighting:6,electric:2,dark:2},personality:"Lightning-fast, furiously passionate, and channelling your inner fire into pure mastery — you are Infernape. You've transformed your wildness into discipline, your passion into art. When you fight, it's a performance as much as a battle.",traits:["Fierce","Disciplined","Passionate","Masterful"],cry:'"My fire is not rage. It is focus."'},
+  {id:395,slug:"empoleon",emoji:"🐧",name:"Empoleon",types:["Water","Steel"],scores:{water:5,steel:5,ice:3,rock:2},personality:"Noble, composed, and commanding with quiet authority — you are Empoleon. You lead not by demanding attention but by deserving it. Your calm steadiness makes people instinctively trust and follow you, even through the most brutal storms.",traits:["Noble","Authoritative","Composed","Steadfast"],cry:'"I do not demand respect. I simply have it."'},
+  {id:407,slug:"roserade",emoji:"🌹",name:"Roserade",types:["Grass","Poison"],scores:{grass:5,poison:4,fairy:3,psychic:2},personality:"Elegant on the surface, dangerous beneath — you are Roserade. You captivate everyone with your beauty and charm, but those who underestimate you quickly learn their mistake. Your grace is genuine, and your sting is absolutely real.",traits:["Elegant","Captivating","Dangerous","Dual-natured"],cry:'"Beautiful things have thorns. That\'s the point."'},
+  {id:609,slug:"chandelure",emoji:"🕯️",name:"Chandelure",types:["Ghost","Fire"],scores:{ghost:5,fire:4,dark:3,psychic:3},personality:"Hauntingly beautiful, mysteriously captivating, and burning with an eerie inner light — you are Chandelure. You draw people towards you like moths to a flame. Your depth is bottomless, your presence unforgettable, your soul luminous.",traits:["Haunting","Captivating","Mysterious","Luminous"],cry:'"Come closer. My light is warm. I promise."'},
+  {id:635,slug:"hydreigon",emoji:"🐉",name:"Hydreigon",types:["Dark","Dragon"],scores:{dark:6,dragon:6,flying:3,ghost:2},personality:"Fierce, relentless, and operating on a completely different frequency — you are Hydreigon. Three minds working as one terrifying whole. You see every angle, pursue every goal simultaneously, and leave only awe in your wake.",traits:["Fierce","Multi-minded","Relentless","Terrifying"],cry:'"Three heads. One unstoppable will."'},
+  {id:706,slug:"goodra",emoji:"🐉",name:"Goodra",types:["Dragon"],scores:{dragon:5,water:3,fairy:3,normal:3},personality:"The gentlest dragon you'll ever meet — but do not let that fool you. Like Goodra, your warmth and affection are your defining traits, and beneath that loving exterior is a power so vast it once made entire cities flee.",traits:["Gentle","Affectionate","Powerful","Pure-hearted"],cry:'"I just want a hug. Also I could flatten a building. Both are true."'},
+  {id:724,slug:"decidueye",emoji:"🏹",name:"Decidueye",types:["Grass","Ghost"],scores:{grass:4,ghost:5,dark:3,flying:3,psychic:2},personality:"Silent, precise, and deeply connected to both nature and spirit — you are Decidueye. You are the calm archer: patient, observant, and delivering your truth with pinpoint accuracy when it matters. You walk between worlds effortlessly.",traits:["Silent","Precise","Spiritual","Patient"],cry:'"I see you. Even from within the shadows."'},
+  {id:727,slug:"incineroar",emoji:"🔥",name:"Incineroar",types:["Fire","Dark"],scores:{fire:5,dark:5,fighting:4,normal:2},personality:"Bold, theatrical, and living for the crowd — you are Incineroar. You play the villain for the drama, but beneath the heel persona is a fierce protector who would do anything for those who matter. The performance is real, and so is the heart.",traits:["Bold","Theatrical","Fierce","Secretly Protective"],cry:'"I play the bad guy. But I\'m the one who always shows up."'},
+  {id:887,slug:"dragapult",emoji:"👻",name:"Dragapult",types:["Dragon","Ghost"],scores:{dragon:5,ghost:5,flying:4,electric:3,dark:2},personality:"Absurdly fast, impossibly cool, and operating on a completely different frequency — you are Dragapult. You move through life like a stealth missile: silent, precise, and only visible when it's already too late. The most modern legend.",traits:["Blazing Fast","Stealthy","Cool","Ultra-modern Legend"],cry:'"By the time you hear me coming, I\'m already gone."'}
+];
+
+let currentQ=0, answers=[], typeCounts={}, trainerName='', myResult=null;
+
+// Type badges
+const uniqueTypes=["Fire","Water","Grass","Electric","Psychic","Dark","Dragon","Ice","Ghost","Fairy","Fighting","Flying","Steel","Normal","Rock","Poison","Bug"];
+const badges=document.getElementById('typeBadges');
+uniqueTypes.forEach((t,i)=>{
+  const b=document.createElement('span');
+  b.className=`type-badge type-${t.toLowerCase()}`;
+  b.textContent=t;
+  b.style.animationDelay=`${i*.05}s`;
+  badges.appendChild(b);
+});
+
+function checkName(){
+  const val=document.getElementById('trainerName').value.trim();
+  document.getElementById('btnStart').classList.toggle('ready', val.length>=2);
+}
+
+function showNameScreen(){
+  hideAll();
+  document.getElementById('name-screen').style.display='block';
+}
+
+function startQuiz(){
+  trainerName=document.getElementById('trainerName').value.trim();
+  if(trainerName.length<2) return;
+  currentQ=0; answers=[]; typeCounts={};
+  hideAll();
+  document.getElementById('quiz-screen').style.display='block';
+  renderQuestion();
+}
+
+function hideAll(){
+  ['name-screen','quiz-screen','loading-screen','result-screen','board-screen'].forEach(id=>{
+    document.getElementById(id).style.display='none';
+  });
+}
+
+function renderQuestion(){
+  const q=questions[currentQ];
+  const pct=Math.round((currentQ/8)*100);
+  document.getElementById('progressLabel').textContent=`QUESTION ${currentQ+1} OF 8`;
+  document.getElementById('progressPct').textContent=pct+'%';
+  document.getElementById('progressFill').style.width=pct+'%';
+  document.getElementById('questionNum').innerHTML=`QUESTION ${currentQ+1} <span style="color:rgba(255,255,255,.3);font-size:8px">OF 8</span>`;
+  document.getElementById('questionEmoji').textContent=q.emoji;
+  document.getElementById('questionText').textContent=q.text;
+  const card=document.getElementById('questionCard');
+  card.style.animation='none'; card.offsetHeight; card.style.animation='cardSlide .5s ease both';
+  const grid=document.getElementById('optionsGrid');
+  grid.innerHTML='';
+  ['A','B','C','D'].forEach((letter,i)=>{
+    const btn=document.createElement('button');
+    btn.className='option-btn';
+    btn.innerHTML=`<span><span class="option-letter">${letter}</span>${q.options[i].text}</span>`;
+    btn.onclick=()=>selectOption(i,btn,q);
+    grid.appendChild(btn);
+  });
+  document.getElementById('btnNext').classList.remove('active');
+  answers[currentQ]=null;
+}
+
+function selectOption(idx,btn,q){
+  document.querySelectorAll('.option-btn').forEach(b=>b.classList.remove('selected'));
+  btn.classList.add('selected');
+  answers[currentQ]=idx;
+  q.options[idx].types.forEach(t=>{typeCounts[t]=(typeCounts[t]||0)+1;});
+  document.getElementById('btnNext').classList.add('active');
+}
+
+function nextQuestion(){
+  if(answers[currentQ]===null) return;
+  currentQ++;
+  if(currentQ>=8) showResult();
+  else renderQuestion();
+}
+
+function computeResult(){
+  let best=allPokemon[0], bestScore=-1;
+  allPokemon.forEach(p=>{
+    let score=0;
+    Object.entries(p.scores).forEach(([type,weight])=>{
+      score+=(typeCounts[type]||0)*weight;
+    });
+    if(score>bestScore){bestScore=score;best=p;}
+  });
+  return best;
+}
+
+async function showResult(){
+  hideAll();
+  document.getElementById('loading-screen').style.display='block';
+  document.getElementById('loadingText').textContent='FINDING YOUR POKÉMON...';
+
+  myResult=computeResult();
+
+  // Save to shared storage
+  try {
+    const entry={
+      trainer: trainerName,
+      pokemon: myResult.name,
+      pokemonId: myResult.id,
+      pokemonSlug: myResult.slug,
+      pokemonEmoji: myResult.emoji,
+      types: myResult.types,
+      timestamp: Date.now()
+    };
+    await window.storage.set(`trainer:${trainerName.toLowerCase().replace(/\s+/g,'_')}`, JSON.stringify(entry), true);
+  } catch(e){ console.log('Storage save failed', e); }
+
+  setTimeout(()=>{
+    hideAll();
+    displayResult(myResult);
+    document.getElementById('result-screen').style.display='block';
+  }, 2200);
+}
+
+function displayResult(p){
+  document.getElementById('resultNum').textContent=`#${String(p.id).padStart(3,'0')}`;
+  document.getElementById('resultTrainer').textContent=`TRAINER: ${trainerName.toUpperCase()}`;
+  document.getElementById('resultName').textContent=p.name;
+  document.getElementById('resultPersonality').textContent=p.personality;
+  document.getElementById('resultCry').textContent=p.cry;
+
+  const img=document.getElementById('resultSprite');
+  img.style.opacity='0';
+  document.getElementById('spriteWrap').querySelectorAll('div').forEach(d=>d.remove());
+  const paddedId=String(p.id).padStart(3,'0');
+  const urls=[
+    `https://assets.pokemon.com/assets/cms2/img/pokedex/full/${paddedId}.png`,
+    `https://img.pokemondb.net/artwork/large/${p.slug}.jpg`,
+    `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${p.id}.png`,
+    `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${p.id}.png`
+  ];
+  let idx=0;
+  img.style.display='block';
+  function tryNext(){ if(idx>=urls.length){img.style.display='none';document.getElementById('spriteWrap').innerHTML+=`<div style="font-size:100px;line-height:1">${p.emoji}</div>`;return;} img.src=urls[idx++]; }
+  img.onload=()=>{img.style.opacity='1';};
+  img.onerror=tryNext;
+  tryNext();
+
+  const tb=document.getElementById('resultTypeBadges');
+  tb.innerHTML='';
+  p.types.forEach(t=>{const b=document.createElement('span');b.className=`result-type-badge type-${t.toLowerCase()}`;b.textContent=t;tb.appendChild(b);});
+
+  const tc=document.getElementById('resultTraits');
+  tc.innerHTML='';
+  p.traits.forEach(trait=>{const tag=document.createElement('span');tag.className='trait-tag';tag.textContent='⚡ '+trait;tc.appendChild(tag);});
+}
+
+async function showBoard(){
+  hideAll();
+  document.getElementById('board-screen').style.display='block';
+  await loadBoard();
+}
+
+async function loadBoard(){
+  const list=document.getElementById('boardList');
+  list.innerHTML='<div class="board-loading">LOADING TRAINERS...</div>';
+  try {
+    const keysResult=await window.storage.list('trainer:', true);
+    if(!keysResult || !keysResult.keys || keysResult.keys.length===0){
+      list.innerHTML='<div class="board-empty">NO TRAINERS YET!<br><br>BE THE FIRST TO<br>TAKE THE QUIZ ⚔️</div>';
+      return;
+    }
+    const entries=[];
+    for(const key of keysResult.keys){
+      try{
+        const r=await window.storage.get(key, true);
+        if(r && r.value) entries.push(JSON.parse(r.value));
+      }catch(e){}
+    }
+    entries.sort((a,b)=>b.timestamp-a.timestamp);
+    if(entries.length===0){
+      list.innerHTML='<div class="board-empty">NO TRAINERS YET!<br><br>BE THE FIRST TO<br>TAKE THE QUIZ ⚔️</div>';
+      return;
+    }
+    list.innerHTML='';
+    entries.forEach((entry,i)=>{
+      const isMe = entry.trainer.toLowerCase()===trainerName.toLowerCase();
+      const rankClass = i===0?'gold':i===1?'silver':i===2?'bronze':'';
+      const rankSymbol = i===0?'🥇':i===1?'🥈':i===2?'🥉':`#${i+1}`;
+      const paddedId=String(entry.pokemonId).padStart(3,'0');
+      const timeAgo=getTimeAgo(entry.timestamp);
+      const div=document.createElement('div');
+      div.className=`board-entry${isMe?' me':''}`;
+      div.style.animationDelay=`${i*.07}s`;
+      div.innerHTML=`
+        <div class="board-rank ${rankClass}">${rankSymbol}</div>
+        <img class="board-sprite" src="https://assets.pokemon.com/assets/cms2/img/pokedex/full/${paddedId}.png"
+          onerror="this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${entry.pokemonId}.png'"
+          alt="${entry.pokemon}">
+        <div class="board-info">
+          <div class="board-trainer">${entry.trainer.toUpperCase()}${isMe?'<span class="me-tag">YOU</span>':''}</div>
+          <div class="board-pokemon">${entry.pokemonEmoji} ${entry.pokemon}</div>
+          <div class="board-type-badges">${entry.types.map(t=>`<span class="board-type-badge type-${t.toLowerCase()}">${t}</span>`).join('')}</div>
+          <div class="board-time">${timeAgo}</div>
+        </div>`;
+      list.appendChild(div);
+    });
+  } catch(e){
+    list.innerHTML='<div class="board-empty">COULD NOT LOAD<br>LEADERBOARD 😢<br><br>TRY AGAIN LATER</div>';
+  }
+}
+
+function getTimeAgo(ts){
+  const diff=Date.now()-ts;
+  const mins=Math.floor(diff/60000);
+  if(mins<1) return 'Just now';
+  if(mins<60) return `${mins}m ago`;
+  const hrs=Math.floor(mins/60);
+  if(hrs<24) return `${hrs}h ago`;
+  return `${Math.floor(hrs/24)}d ago`;
+}
+
+function restartQuiz(){
+  currentQ=0; answers=[]; typeCounts={};
+  document.getElementById('trainerName').value='';
+  document.getElementById('btnStart').classList.remove('ready');
+  showNameScreen();
+}
+</script>
+</body>
+</html>
